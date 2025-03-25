@@ -27,7 +27,9 @@ process MASHSCREEN {
     
     input:
 
-    tuple val(sample_id), path(non_human_reads) //gets non_human_reads fastq files from the  minimap process
+    tuple val(sample_id), path(non_human_reads) //gets non_human_reads fastq files from the  minimap process 
+    val database //get database from download database process
+
 
     output:
     path "results/${sample_id}.tab"                          , emit: results // Mash distance output
@@ -39,9 +41,10 @@ process MASHSCREEN {
 
     """
     mkdir results
+    mash screen -w -p 4 ${database} ${reads} > ${id}_screen.tab
+    sort -gr ${id}_screen.tab > ${id}_mash_out.txt
 
     """
-    
 
 
 
@@ -49,4 +52,11 @@ process MASHSCREEN {
     "${task.process}":
         mash: \$( mash --version )
     END_VERSIONS
+}
+workflow{
+        MASHSCREEN(input_ch
+                        .map{file ->
+                        def id = file.baseName
+                        return [id,file]
+                        }, input_db)
 }
